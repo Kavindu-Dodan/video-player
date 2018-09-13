@@ -1,0 +1,4 @@
+
+Split video by ffmpeg
+
+ffmpeg -i video -ss <start> -t <duration> <out_name>

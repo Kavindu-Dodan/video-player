@@ -17,31 +17,30 @@
 </div>
 
 <script src="js/jquery-3.3.1.slim.min.js"></script>
+<script src="js/jquery-3.3.1.min.js"></script>
 <script src="js/popper.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
 
 <script>
 var source = document.createElement('source');
-source.setAttribute('src','videos/v1.mp4');
-source.setAttribute('type','video/mp4');
 
-var video = document.getElementById("player");
-video.appendChild(source);
-video.controls = false
-video.play();
+var oReq = new XMLHttpRequest();
+oReq.open("GET", "http://localhost:9090/server/video?id=v1.mp4", true);
+oReq.responseType = "blob";
+oReq.onload = function(oEvent) {
+  var blob = oReq.response;
+  var obj = window.URL.createObjectURL(blob)
+  source.setAttribute('src', obj);
+  source.setAttribute('type','video/mp4');
 
-// Number of video segments we have :)
-var videos = 4;
-var count = 1;
+  var video = document.getElementById("player");
+  video.appendChild(source);
+  video.controls = false
+  video.play();
+};
+oReq.send();
 
-video.onended = function() {
-    count ++;
-    if (count > videos) {count = 1;}
 
-    source.setAttribute('src','videos/v'+count+'.mp4');
-    video.load();
-    video.play();
-}
 </script>
 </body>
 </html>

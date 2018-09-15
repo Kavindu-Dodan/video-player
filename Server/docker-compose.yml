@@ -1,0 +1,9 @@
+version : '3'
+services :
+  cherrypy:
+    build : .
+    image : cherrpy-server
+    ports:
+    - "9090:8080"
+    volumes:
+    - .:/usr/server

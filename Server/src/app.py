@@ -35,9 +35,8 @@ class VideoServer(object):
             return json.dumps({"videos": self.video_list}).encode('utf8')
         elif path[0] == 'video':
             # Check for params
-            if params['id'] is not None and params['id'] in self.video_list:
-                cherrypy.response.headers['Content-Type'] = "video/mp4"
-                return self.load_video(params['id'])
+            cherrypy.response.headers['Content-Type'] = "video/mp4"
+            return self.load_video(params['id'])
 
     def load_video(self, video_id):
         with open(self.video_path + video_id, 'rb') as video_stream:

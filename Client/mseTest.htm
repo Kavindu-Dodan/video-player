@@ -13,7 +13,7 @@
 
 <div class="container">
 
-    <video autoplay muted id="player" controls>
+    <video  height="360" id="player" controls>
     </video>
 
 </div>
@@ -23,28 +23,47 @@
 <script src="js/bootstrap.min.js"></script>
 
 <script>
-
 var videoPlayer = document.getElementById('player');
-var medSource = new MediaSource;
+var mediaSource = new MediaSource;
 
-get_video_chunk("http://localhost:9090/server/video?id=b2.webm")
-    .then(function(buf){
-        var arrayBuffer = event.target.result;
-        videoPlayer.src = URL.createObjectURL(medSource);
-        medSource.addEventListener('sourceopen', 
-            function(){
-                var sourceBuffer = medSource.addSourceBuffer('video/webm; codecs="vorbis, vp8"');
+var mime = 'video/webm; codecs="vorbis, vp8"';
+
+load_videos();
+
+
+async function load_videos(){
+    var vArray = []
+
+    vArray.push(await get_video_chunk("http://localhost:9090/server/video?id=c1.webm"));
+    vArray.push(await get_video_chunk("http://localhost:9090/server/video?id=c2.webm"));
+    vArray.push(await get_video_chunk("http://localhost:9090/server/video?id=c3.webm"));
+
+    videoPlayer.src = URL.createObjectURL(mediaSource);
+
+    mediaSource.addEventListener('sourceopen', 
+        function(){
+            if(MediaSource.isTypeSupported(mime)){
+                var sourceBuffer = mediaSource.addSourceBuffer(mime);
+                sourceBuffer.mode = 'sequence';
+                var index = 0;
                 sourceBuffer.addEventListener('updateend', function () {
-                    medSource.endOfStream();
-                    videoPlayer.play();
+                    index++;
+                    if(index > 2){
+                        sourceBuffer.onupdateend = null;
+                        mediaSource.endOfStream();
+                        return;
+                    }
+                    // `chunk.mediaDuration` is `.duration` of media retrieved from `loadedmetadata` event
+                    sourceBuffer.timestampOffset =  sourceBuffer.timestampOffset + 4.8;
+                    // read next `File` object
+                    sourceBuffer.appendBuffer(vArray[index]);
                 });
-                sourceBuffer.appendBuffer(buf);
+                sourceBuffer.appendBuffer(vArray[index]);
             }
-        );
-    })
-    .catch(function(reject){
-        alert("Something went wrong" +reject)
-});
+        }
+    );
+}
+
 
 
 function get_video_chunk(url){

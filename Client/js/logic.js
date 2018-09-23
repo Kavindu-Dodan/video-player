@@ -7,6 +7,8 @@ function log(text, level = "Info", txtAreaID) {
     } else {
         txtArea.value += "[" + level + "] : " + text + '\n'
     }
+
+    txtArea.scrollTop = txtArea.scrollHeight;
 }
 
 function get_video_chunk(url) {

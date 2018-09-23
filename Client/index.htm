@@ -16,14 +16,28 @@
     </div>
 
     <div class="container top_padding">
+        <div class="row justify-content-start">
+            <div class="col-4 botom_padding">
+                Choose Video :
+                <select id="selector">
+                    <option value="bunny">Bunny</option>
+                    <option value="Cartoon">Cartoon</option>
+                </select>
+                <button type="button" class="btn btn-primary" onclick="start_video();">Load</button>
+            </div>
+        </div>
+        <div class="row" id="video_row">
+            <div class="col">
+                <video class="botom_padding" height="360" id="player" controls>Browser does not support VIDEO tag</video>
+            </div>
+        </div>
         <div class="row">
             <div class="col">
-                <h5 class="botom_padding" id="video_itle">Now Playing:</h5>
-                <video height="360" id="player" controls>Browser does not support VIDEO tag</video>
-            </div>
-
-            <div class="col-md-auto">
                 <h5 class="botom_padding">Console :</h5>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
                 <textarea class="border" cols="50" rows="10" id="console" readonly></textarea>
             </div>
         </div>
@@ -38,62 +52,72 @@
         log("Starting Scripts", "Info");
 
         var base = "http://localhost:9090/server/video";
-        var id = "bunny"
 
         log("Loading metadata", "Debug");
         log("Base URL = " + base, "Debug");
 
-        var videoPlayer = document.getElementById('player');
-        var mediaSource = new MediaSource;
+        function start_video() {
+            var videoPlayer = document.getElementById('player');
+            videoPlayer.pause();
+            videoPlayer.currentTime = 0;
+            videoPlayer.autoPlay = true;
 
-        get_metadata(base, id)
-            .then(function (metadata) {
-                log("Video :" + metadata['title']);
-                log("MIME :" + metadata['mime']);
-                log("Length :" + metadata['length']);
-                log("Available segments :")
+            var mediaSource = new MediaSource;
 
-                metadata["segments"].forEach(element => {
-                    log(element.segment)
-                });
+            var video_id = document.getElementById('selector').value;
 
-                starter(metadata)
-            })
-            .catch(function (result) {
-                log("Something went wrong :" + result, "Error")
-            })
+            get_metadata(base, video_id)
+                .then(function (metadata) {
+                    log("Video :" + metadata['title']);
+                    log("MIME :" + metadata['mime']);
+                    log("Length :" + metadata['length']);
+                    log("Available segments :")
 
-        function starter(metadata) {
+                    metadata["segments"].forEach(element => {
+                        log(element.segment)
+                    });
+
+                    starter(metadata, videoPlayer, mediaSource)
+                })
+                .catch(function (result) {
+                    log("Something went wrong :" + result, "Error")
+                })
+        }
+
+        function starter(metadata, videoPlayer, mediaSource) {
             videoPlayer.src = URL.createObjectURL(mediaSource);
             mediaSource.addEventListener('sourceopen', function () {
-                player(metadata)
+                player(metadata, mediaSource)
             });
         }
 
-        async function player(metadata) {
+        async function player(metadata, mediaSource) {
             if (MediaSource.isTypeSupported(metadata['mime'])) {
                 var sourceBuffer = mediaSource.addSourceBuffer(metadata['mime']);
                 sourceBuffer.mode = 'sequence';
 
                 var segmentCount = metadata['segments'].length
                 var index = 0;
-                
-                // video?id=bunny&segment=bunny0.webm&quality=high
-                
+
                 sourceBuffer.addEventListener('updateend', async function () {
                     index++;
                     if (index >= segmentCount) {
                         sourceBuffer.onupdateend = null;
                         mediaSource.endOfStream();
+                        log("All segments loaded", 'Debug')
                         return;
                     }
-                    var chunk = await get_video_chunk(url_create(base, id, metadata['segments'][index].segment));
+                    log("Requesting :" + metadata['segments'][index].segment)
+                    var chunk = await get_video_chunk(url_create(base, metadata["title"], metadata['segments'][index].segment));
                     log("Appended :" + metadata['segments'][index].segment)
                     sourceBuffer.appendBuffer(chunk);
                 });
-                var chunk = await get_video_chunk(url_create(base, id, metadata['segments'][index].segment));
+                log("Requesting :" + metadata['segments'][index].segment)
+                var chunk = await get_video_chunk(url_create(base, metadata["title"], metadata['segments'][index].segment));
                 log("Appended :" + metadata['segments'][index].segment)
                 sourceBuffer.appendBuffer(chunk);
+            } else {
+                alert("MIME type is not supported")
             }
         }
     </script>

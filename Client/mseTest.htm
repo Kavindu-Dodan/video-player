@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -7,79 +8,73 @@
     <title>MainPage</title>
     <link rel="stylesheet" href="css/bootstrap.min.css">
 </head>
+
 <body>
 
-        <h3>VIDEO tag and MediaSource API</h3>
+    <h3>VIDEO tag and MediaSource API</h3>
 
-<div class="container">
+    <div class="container">
+        <video height="360" id="player" controls>
+        </video>
 
-    <video  height="360" id="player" controls>
-    </video>
+    </div>
 
-</div>
+    <script src="js/jquery-3.3.1.slim.min.js"></script>
+    <script src="js/popper.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
 
-<script src="js/jquery-3.3.1.slim.min.js"></script>
-<script src="js/popper.min.js"></script>
-<script src="js/bootstrap.min.js"></script>
+    <script>
+        var videoPlayer = document.getElementById('player');
+        var mediaSource = new MediaSource;
 
-<script>
-var videoPlayer = document.getElementById('player');
-var mediaSource = new MediaSource;
+        var mime = 'video/webm; codecs="vorbis, vp8"';
+        var base = "http://localhost:9090/server/video";
+        var id = "bunny"
+        var segments = 7
 
-var mime = 'video/webm; codecs="vorbis, vp8"';
+        videoPlayer.src = URL.createObjectURL(mediaSource);
+        mediaSource.addEventListener('sourceopen', player);
 
-load_videos();
-
-
-async function load_videos(){
-    var vArray = []
-
-    vArray.push(await get_video_chunk("http://localhost:9090/server/video?id=c1.webm"));
-    vArray.push(await get_video_chunk("http://localhost:9090/server/video?id=c2.webm"));
-    vArray.push(await get_video_chunk("http://localhost:9090/server/video?id=c3.webm"));
-
-    videoPlayer.src = URL.createObjectURL(mediaSource);
-
-    mediaSource.addEventListener('sourceopen', 
-        function(){
-            if(MediaSource.isTypeSupported(mime)){
+        async function player() {
+            if (MediaSource.isTypeSupported(mime)) {
                 var sourceBuffer = mediaSource.addSourceBuffer(mime);
                 sourceBuffer.mode = 'sequence';
+                
                 var index = 0;
-                sourceBuffer.addEventListener('updateend', function () {
+                sourceBuffer.addEventListener('updateend', async function () {
                     index++;
-                    if(index > 2){
+                    if (index >= segments) {
                         sourceBuffer.onupdateend = null;
                         mediaSource.endOfStream();
                         return;
                     }
-                    // `chunk.mediaDuration` is `.duration` of media retrieved from `loadedmetadata` event
-                    sourceBuffer.timestampOffset =  sourceBuffer.timestampOffset + 4.8;
-                    // read next `File` object
-                    sourceBuffer.appendBuffer(vArray[index]);
+                    var chunk = await get_video_chunk(url_create(base, id , index));
+                    sourceBuffer.appendBuffer(chunk);
                 });
-                sourceBuffer.appendBuffer(vArray[index]);
+                var chunk = await get_video_chunk(url_create(base, id , index));
+                sourceBuffer.appendBuffer(chunk);
             }
         }
-    );
-}
 
+        function url_create(base, id , segment){
+            return base +"?" + "id=" + id + "&segment="+ segment
+        }
 
+        function get_video_chunk(url) {
+            return new Promise(function (resolve, reject) {
+                var httpRequest = new XMLHttpRequest();
+                httpRequest.open("GET", url);
+                httpRequest.responseType = "arraybuffer";
 
-function get_video_chunk(url){
-    return new Promise(function(resolve, reject){
-        var httpRequest = new XMLHttpRequest();
-        httpRequest.open("GET", url);
-        httpRequest.responseType = "arraybuffer";
+                httpRequest.onload = function () {
+                    resolve(httpRequest.response);
+                };
 
-        httpRequest.onload = function() {
-          resolve(httpRequest.response);
-        };
-
-        httpRequest.onerror = reject;
-        httpRequest.send();
-    });
-}
-</script>
+                httpRequest.onerror = reject;
+                httpRequest.send();
+            });
+        }
+    </script>
 </body>
+
 </html>

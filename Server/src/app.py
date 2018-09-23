@@ -9,14 +9,14 @@ from yaml import load
 class VideoServer(object):
 
     def __init__(self):
-        self.video_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'videos')) + '/'
+        self.video_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'videos'))
 
         # We only have one video yet
-        with open(self.video_path + 'video-list.yml', 'r') \
-                as fileStream:
-            self.video_list = load(fileStream)['videos']
+        # with open(self.video_path + 'video-list.yml', 'r') \
+        #         as fileStream:
+        #     self.video_list = load(fileStream)['videos']
 
-        cherrypy.log("Video list loaded")
+        # cherrypy.log("Video list loaded")
 
     def _cp_dispatch(self, vpath):
         cherrypy.request.params["path"] = []
@@ -28,17 +28,18 @@ class VideoServer(object):
 
     def GET(self, path=None, **params):
         cherrypy.response.headers['Access-Control-Allow-Origin'] = '*'
-
-        # Call for video list
-        if path is None:
-            cherrypy.response.headers['Content-Type'] = "application/json"
-            return json.dumps({"videos": self.video_list}).encode('utf8')
-        elif path[0] == 'video':
-            # Check for params
+            
+        if path[0] == 'video':
             cherrypy.response.headers['Content-Type'] = "video/mp4"
-            return self.load_video(params['id'])
+            return self.load_video(params['id'], params['segment'])
+        else:
+            raise cherrypy.HTTPError(404)
 
-    def load_video(self, video_id):
-        with open(self.video_path + video_id, 'rb') as video_stream:
+    def load_video(self, id, segment):
+        video_folder = os.path.abspath(self.video_path + '/' +id )
+        cherrypy.log(video_folder)
+        filename = "%s%s.webm" % (id, segment)
+
+        with open(video_folder+ '/'+filename, 'rb') as video_stream:
             return video_stream.read()
 

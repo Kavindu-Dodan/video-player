@@ -1,49 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <title>MainPage</title>
     <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/custom.css">
 </head>
+
 <body>
+    <div class="container">
+        <h2 class="topnbottom_padding">Video Player</h2>
+    </div>
 
-    <h3>VIDEO tag and local video chunks</h3>
+    <div class="container top_padding">
+        <div class="row">
+            <div class="col">
+                <h5 class="botom_padding" id="video_itle">Now Playing:</h5>
+                <video height="360" id="player" controls>Browser does not support VIDEO tag</video>
+            </div>
 
-<div class="container">
+            <div class="col-md-auto">
+                <h5 class="botom_padding">Console :</h5>
+                <textarea class="border" cols="50" rows="10" id="console" readonly></textarea>
+            </div>
+        </div>
+    </div>
 
-    <video autoplay muted id="player" width="320" height="240" controls>
-    </video>
+    <script src="js/jquery-3.3.1.slim.min.js"></script>
+    <script src="js/popper.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/logic.js"></script>
 
-</div>
+    <script>
+        log("Starting Scripts", "Info");
 
-<script src="js/jquery-3.3.1.slim.min.js"></script>
-<script src="js/popper.min.js"></script>
-<script src="js/bootstrap.min.js"></script>
+        var base = "http://localhost:9090/server/video";
+        var id = "bunny"
 
-<script>
-var source = document.createElement('source');
-source.setAttribute('src','videos/v1.mp4');
-source.setAttribute('type','video/mp4');
+        log("Loading metadata", "Debug");
+        log("Base URL = " + base, "Debug");
 
-var video = document.getElementById("player");
-video.appendChild(source);
-video.controls = false
-video.play();
+        var videoPlayer = document.getElementById('player');
+        var mediaSource = new MediaSource;
 
-// Number of video segments we have :)
-var videos = 4;
-var count = 1;
+        get_metadata(base, id)
+            .then(function (metadata) {
+                log("Video :" + metadata['title']);
+                log("MIME :" + metadata['mime']);
+                log("Length :" + metadata['length']);
+                log("Available segments :")
 
-video.onended = function() {
-    count ++;
-    if (count > videos) {count = 1;}
+                metadata["segments"].forEach(element => {
+                    log(element.segment)
+                });
 
-    source.setAttribute('src','videos/v'+count+'.mp4');
-    video.load();
-    video.play();
-}
-</script>
+                starter(metadata)
+            })
+            .catch(function (result) {
+                log("Something went wrong :" + result, "Error")
+            })
+
+        function starter(metadata) {
+            videoPlayer.src = URL.createObjectURL(mediaSource);
+            mediaSource.addEventListener('sourceopen', function () {
+                player(metadata)
+            });
+        }
+
+        async function player(metadata) {
+            if (MediaSource.isTypeSupported(metadata['mime'])) {
+                var sourceBuffer = mediaSource.addSourceBuffer(metadata['mime']);
+                sourceBuffer.mode = 'sequence';
+
+                var segmentCount = metadata['segments'].length
+                var index = 0;
+                
+                // video?id=bunny&segment=bunny0.webm&quality=high
+                
+                sourceBuffer.addEventListener('updateend', async function () {
+                    index++;
+                    if (index >= segmentCount) {
+                        sourceBuffer.onupdateend = null;
+                        mediaSource.endOfStream();
+                        return;
+                    }
+                    var chunk = await get_video_chunk(url_create(base, id, metadata['segments'][index].segment));
+                    log("Appended :" + metadata['segments'][index].segment)
+                    sourceBuffer.appendBuffer(chunk);
+                });
+                var chunk = await get_video_chunk(url_create(base, id, metadata['segments'][index].segment));
+                log("Appended :" + metadata['segments'][index].segment)
+                sourceBuffer.appendBuffer(chunk);
+            }
+        }
+    </script>
 </body>
+
 </html>

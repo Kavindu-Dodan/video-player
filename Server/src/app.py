@@ -52,9 +52,7 @@ class VideoServer(object):
         video_with_quality = os.path.join(video_root, quality)
 
         if (os.path.exists(video_with_quality)):
-            filename = "%s%s.webm" % (id, segment)
-
-            with open(os.path.join(video_with_quality, filename), 'rb') as video_stream:
+            with open(os.path.join(video_with_quality, segment), 'rb') as video_stream:
                 return video_stream.read()
         else:
             raise cherrypy.HTTPError(

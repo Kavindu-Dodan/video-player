@@ -26,9 +26,9 @@
     <script>
         var videoPlayer = document.getElementById('player');
         var mediaSource = new MediaSource;
+        var base = "http://localhost:9090/server/video";
 
         var mime = 'video/webm; codecs="vorbis, vp8"';
-        var base = "http://localhost:9090/server/video";
 
         var id = "bunny"
         var segments = 7
@@ -46,7 +46,7 @@
                     index++;
                     if (index >= segments) {
                         sourceBuffer.onupdateend = null;
-                        //mediaSource.endOfStream();
+                        mediaSource.endOfStream();
                         return;
                     }
                     var chunk = await get_video_chunk(url_create(base, id , index));

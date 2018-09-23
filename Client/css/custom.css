@@ -1,0 +1,17 @@
+
+.top_padding {
+    margin-top : 2rem
+}
+
+.botom_padding{
+    margin-bottom: 1rem
+}
+
+.topnbottom_padding{
+    margin-bottom: 1rem;
+    margin-top: 1rem
+}
+
+.border{
+    outline: 2px solid black
+}

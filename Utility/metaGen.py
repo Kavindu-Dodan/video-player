@@ -17,7 +17,7 @@ meta = {}
 
 meta['title'] = title
 meta['mime'] = mime
-meta['videos'] = []
+meta['segments'] = []
 
 with open(csv_file, 'r') as csv_data:
     reader = csv.reader(csv_data, delimiter=',')
@@ -31,7 +31,8 @@ with open(csv_file, 'r') as csv_data:
         data['end'] = row[2]
         final_length = row[2]
 
-        meta['videos'].append(data)
+        meta['segments'].append(data)
+        index += 1
 
     meta['length'] = final_length
 

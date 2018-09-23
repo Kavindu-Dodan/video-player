@@ -1,0 +1,42 @@
+{
+    "title": "bunny",
+    "mime": "video/webm; codecs=\"vorbis, vp8\"",
+    "videos": [
+        {
+            "segment": "bunny0.webm",
+            "start": "0.000000",
+            "end": "7.120000"
+        },
+        {
+            "segment": "bunny0.webm",
+            "start": "7.120000",
+            "end": "11.200000"
+        },
+        {
+            "segment": "bunny0.webm",
+            "start": "11.200000",
+            "end": "15.000000"
+        },
+        {
+            "segment": "bunny0.webm",
+            "start": "15.000000",
+            "end": "20.880000"
+        },
+        {
+            "segment": "bunny0.webm",
+            "start": "20.880000",
+            "end": "26.000000"
+        },
+        {
+            "segment": "bunny0.webm",
+            "start": "26.000000",
+            "end": "30.160000"
+        },
+        {
+            "segment": "bunny0.webm",
+            "start": "30.160000",
+            "end": "32.480000"
+        }
+    ],
+    "length": "32.480000"
+}

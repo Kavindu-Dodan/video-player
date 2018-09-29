@@ -30,9 +30,9 @@
                 <div class="row justify-content-start botom_padding">
                     <label>Choose Quality :</label>
                     <select id="quality">
-                        <option de value="high">High - Default</option>
+                            <option value="adaptive">Adaptive-Default</option>
+                        <option de value="high">High</option>
                         <option value="low">Low</option>
-                        <option value="adaptive">Adaptive</option>
                     </select>
                 </div>
             </div>
@@ -52,7 +52,8 @@
             </div>
             <div class="col-4">
                 <h5 class="botom_padding">Console :</h5>
-                    <textarea class="border" cols="50" rows="10" id="console" readonly></textarea>
+                <button type="button" class="btn btn-primary botom_padding" onclick="clearConsole();">Clear</button>
+                <textarea class="border" cols="50" rows="10" id="console" readonly></textarea>
             </div>
         </div>
     </div>
@@ -63,12 +64,10 @@
     <script src="js/logic.js"></script>
 
     <script>
-        log("Starting Scripts", "Info");
+        log("Player Ready", "Info");
 
         var base = "http://localhost:9090/server/video";
-
-        log("Loading metadata", "Debug");
-        log("Base URL = " + base, "Debug");
+        log("Base URL = " + base);
 
         function start_video() {
             var videoPlayer = document.getElementById('player');
@@ -81,20 +80,18 @@
             var video_id = document.getElementById('selector').value;
             var selected_quality = document.getElementById("quality").value;
 
+            log("Loading metadata");
+
             get_metadata(base, video_id)
                 .then(function (metadata) {
-                    log("Video :" + metadata['title']);
-                    log("MIME :" + metadata['mime']);
-                    log("Length :" + metadata['length']);
+                    // Video information
+                    log("Video : " + metadata['title']);
+                    log("MIME : " + metadata['mime']);
+                    log("Length : " + metadata['length']);
+                    log("Selected Quality : " + selected_quality);
+                    log("Available quality : " + metadata["quality"])
 
-                    // todo - warning on no quality 
-                    // todo - set metadata to use selected quality
                     // todo - Handle adaptive quality 
-
-                    log("Selected Quality :" + selected_quality);
-
-                    log("Available quality :" + metadata["quality"])
-
                     if (selected_quality != "adaptive" && !metadata["quality"].some(q => q == selected_quality)) {
                         alert("Quality not found. Video won't be played.");
                         return;
@@ -107,22 +104,24 @@
                         log('\t' + element.segment)
                     });
 
-                    starter(metadata, videoPlayer, mediaSource)
+                    player(metadata, videoPlayer, mediaSource)
                 })
                 .catch(function (result) {
                     log("Something went wrong :" + result, "Error")
                 })
         }
 
-        function starter(metadata, videoPlayer, mediaSource) {
+        async function player(metadata, videoPlayer, mediaSource) {
             videoPlayer.src = URL.createObjectURL(mediaSource);
-            mediaSource.addEventListener('sourceopen', function () {
-                player(metadata, mediaSource)
-            });
-        }
 
-        async function player(metadata, mediaSource) {
-            if (MediaSource.isTypeSupported(metadata['mime'])) {
+            if (!MediaSource.isTypeSupported(metadata['mime'])) {
+                alert("MIME type " + metadata['mime'] + "is not supported by browser");
+                log("MIME type " + metadata['mime'] + "is not supported by browser", "Error")
+                log("Video stopped")
+                return;
+            }
+
+            mediaSource.addEventListener('sourceopen', async function () {
                 var sourceBuffer = mediaSource.addSourceBuffer(metadata['mime']);
                 sourceBuffer.mode = 'sequence';
 
@@ -131,32 +130,59 @@
 
                 sourceBuffer.addEventListener('updateend', async function () {
                     index++;
-                    if (index >= segmentCount) {
+                    if (index >= metadata['segments'].length) {
+                        log("All segments loaded")
                         sourceBuffer.onupdateend = null;
                         mediaSource.endOfStream();
-                        log("All segments loaded", 'Debug')
                         return;
                     }
-
-                    // Request Chunk
-                    log("Requesting :" + metadata['segments'][index].segment)
-                    var chunk = await get_video_chunk(url_create(base, metadata["title"], metadata['segments'][index].segment, metadata['quality']));
-                    log("Appended :" + metadata['segments'][index].segment)
-                    
-                    sourceBuffer.appendBuffer(chunk);
+                    next_quality = await loadChunk(metadata, index, sourceBuffer, next_quality);
                 });
-                
-                // Request Chunk
-                log("Requesting :" + metadata['segments'][index].segment)
-                var chunk = await get_video_chunk(url_create(base, metadata["title"], metadata['segments'][index].segment, metadata['quality']));
-                log("Appended :" + metadata['segments'][index].segment)
 
-                
-                sourceBuffer.appendBuffer(chunk);
-            } else {
-                alert("MIME type is not supported")
-            }
+                // First segment is always in requested quality or in high 
+                if (metadata["quality"] == "adaptive") {
+                    next_quality = await loadChunk(metadata, index, sourceBuffer, "high");
+                } else {
+                    next_quality = await loadChunk(metadata, index, sourceBuffer, metadata["quality"]);
+                }
+
+            });
         }
+
+        // Will calculate the bandwith if quality "adaptive" is chosen. Return the next quality to request by calling function
+        async function loadChunk(metadata, segment_index, sourceBuffer, quality) {
+            // Request & load Chunk
+
+            var start = performance.now()
+
+            log("Requesting : " + metadata['segments'][segment_index].segment)
+            var chunk = await get_video_chunk(
+                url_create(base,
+                    metadata["title"],
+                    metadata['segments'][segment_index].segment,
+                    quality));
+
+            log("\t Appended : " + metadata['segments'][segment_index].segment)
+            sourceBuffer.appendBuffer(chunk);
+
+            var end = performance.now();
+            var time = Math.round((end - start));
+            var bw_kBps = Math.round((chunk.byteLength / 1000) / (time / 1000));
+            log("\t Bandwidth : " + bw_kBps + "kB/s")
+
+            if (metadata["quality"] == "adaptive" && bw_kBps < 500) {
+                quality = "low";
+            } else if (metadata["quality"] == "adaptive" && bw_kBps >= 500) {
+                quality = "high";
+            }
+
+            return quality;
+        }
+
+        function clearConsole() {
+            document.getElementById("console").value = "";
+        }
+
     </script>
 </body>
 

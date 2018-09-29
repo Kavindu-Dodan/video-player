@@ -30,7 +30,7 @@
                 <div class="row justify-content-start botom_padding">
                     <label>Choose Quality :</label>
                     <select id="quality">
-                            <option value="adaptive">Adaptive-Default</option>
+                        <option value="adaptive">Adaptive-Default</option>
                         <option de value="high">High</option>
                         <option value="low">Low</option>
                     </select>
@@ -123,13 +123,22 @@
 
             mediaSource.addEventListener('sourceopen', async function () {
                 var sourceBuffer = mediaSource.addSourceBuffer(metadata['mime']);
-                sourceBuffer.mode = 'sequence';
+
+                //////////////
+                //sourceBuffer.mode = 'segments';
 
                 var segmentCount = metadata['segments'].length
                 var index = 0;
 
-                sourceBuffer.addEventListener('updateend', async function () {
+                sourceBuffer.addEventListener('update', async function () {
+
+                    // Set time offset once loading is done
+                    sourceBuffer.timestampOffset = metadata['segments'][index].end;
+                    log("\tTimestamp after:" + sourceBuffer.timestampOffset)
+                    
+                    // Loading and time setting is done move to next frame
                     index++;
+
                     if (index >= metadata['segments'].length) {
                         log("All segments loaded")
                         sourceBuffer.onupdateend = null;

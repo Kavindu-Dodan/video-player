@@ -17,13 +17,34 @@
 
     <div class="container top_padding">
         <div class="row justify-content-start">
-            <div class="col-4 botom_padding">
-                Choose Video :
-                <select id="selector">
-                    <option value="bunny">Bunny</option>
-                    <option value="Cartoon">Cartoon</option>
-                </select>
-                <button type="button" class="btn btn-primary" onclick="start_video();">Load</button>
+            <div class="col-3 botom_padding">
+                <div class="row justify-content-start botom_padding">
+                    <label>Choose Video :</label>
+                    <select id="selector">
+                        <option value="bunny">Bunny-webm</option>
+                        <option value="Cartoon">Cartoon-webm</option>
+                        <option value="Ocean">Ocean-MP4</option>
+                        <option value="Sky">Sky-MP4</option>
+                        <option value="Girl">Girl-MP4</option>
+                    </select>
+                </div>
+                <div class="row justify-content-start botom_padding">
+                    <label>Choose Quality :</label>
+                    <select id="quality">
+                        <option de value="high">High - Default</option>
+                        <option value="low">Low</option>
+                        <option value="adaptive">Adaptive</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-2 botom_padding">
+                <div class="row botom_padding">
+                </div>
+                <div>
+                    <button type="button" class="btn btn-primary" onclick="start_video();">Load</button>
+                </div>
+            </div>
+            <div class="col-6 botom_padding">
             </div>
         </div>
         <div class="row" id="video_row">
@@ -65,16 +86,33 @@
             var mediaSource = new MediaSource;
 
             var video_id = document.getElementById('selector').value;
+            var quality = document.getElementById("quality").value;
 
             get_metadata(base, video_id)
                 .then(function (metadata) {
                     log("Video :" + metadata['title']);
                     log("MIME :" + metadata['mime']);
                     log("Length :" + metadata['length']);
-                    log("Available segments :")
 
+                    // todo - warning on no quality 
+                    // todo - set metadata to use selected quality
+                    // todo - Handle adaptive quality 
+
+                    log("Selected Quality :" + quality);
+
+                    log("Available quality :" + metadata["quality"])
+
+                    if(metadata["quality"].some(q=> q == quality)){
+                        alert("Quality found");
+                    }else{
+                        alert("Quality not found");
+                    }
+
+                    metadata["metadata"] = quality;
+
+                    log("Available segments :")
                     metadata["segments"].forEach(element => {
-                        log(element.segment)
+                        log('\t' + element.segment)
                     });
 
                     starter(metadata, videoPlayer, mediaSource)
@@ -110,11 +148,16 @@
                     log("Requesting :" + metadata['segments'][index].segment)
                     var chunk = await get_video_chunk(url_create(base, metadata["title"], metadata['segments'][index].segment));
                     log("Appended :" + metadata['segments'][index].segment)
+                    var time = metadata['segments'][index].end - metadata['segments'][index].start;
+                    //sourceBuffer.timestampOffset = sourceBuffer.timestampOffset + Math.round(time);
                     sourceBuffer.appendBuffer(chunk);
                 });
                 log("Requesting :" + metadata['segments'][index].segment)
                 var chunk = await get_video_chunk(url_create(base, metadata["title"], metadata['segments'][index].segment));
                 log("Appended :" + metadata['segments'][index].segment)
+
+                var time = metadata['segments'][index].end - metadata['segments'][index].start;
+                // sourceBuffer.timestampOffset = sourceBuffer.timestampOffset + Math.round(time);
                 sourceBuffer.appendBuffer(chunk);
             } else {
                 alert("MIME type is not supported")

@@ -1,0 +1,22 @@
+{
+    "title": "sky",
+    "mime": "video/mp4; codecs=\"avc1.64001F\"",
+    "segments": [
+        {
+            "segment": "sky0.mp4",
+            "start": "0.000000",
+            "end": "2.00000"
+        },
+        {
+            "segment": "sky1.mp4",
+            "start": "2.000000",
+            "end": "4.00000"
+        },
+        {
+            "segment": "sky2.mp4",
+            "start": "4.000000",
+            "end": "6.00000"
+        }
+    ],
+    "length": "6.00000"
+}

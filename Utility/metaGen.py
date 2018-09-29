@@ -10,6 +10,10 @@ title = 'cartoon'
 format = ".webm"
 mime = 'video/webm; codecs="vorbis, vp8"'
 
+quality = ["high", "low"]
+
+print("CSV file : [%s], JSON file : [%s], Video title : [%s], Format : [%s], Mime : [%s]" %  (csv_data, out_json, title, format, mime))
+
 csv_file = os.path.join(os.path.dirname(__file__), csv_data)
 json_file = os.path.join(os.path.dirname(__file__), out_json)
 
@@ -35,6 +39,8 @@ with open(csv_file, 'r') as csv_data:
         index += 1
 
     meta['length'] = final_length
+
+    meta['quality'] = quality
 
 with open(json_file, 'w') as output:
     output.write(json.dumps(meta))

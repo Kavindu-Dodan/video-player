@@ -1,0 +1,27 @@
+{
+    "title": "girl",
+    "mime": "video/mp4; codecs=\"avc1.64001F\"",
+    "segments": [
+        {
+            "segment": "girl1.mp4",
+            "start": "0.000000",
+            "end": "2.00000"
+        },
+        {
+            "segment": "girl2.mp4",
+            "start": "2.000000",
+            "end": "4.00000"
+        },
+        {
+            "segment": "girl3.mp4",
+            "start": "4.000000",
+            "end": "6.00000"
+        },
+        {
+            "segment": "girl4.mp4",
+            "start": "6.0000",
+            "end": "8.0000"
+        }
+    ],
+    "length": "8.0000"
+}

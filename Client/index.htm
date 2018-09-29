@@ -23,9 +23,8 @@
                     <select id="selector">
                         <option value="bunny">Bunny-webm</option>
                         <option value="Cartoon">Cartoon-webm</option>
-                        <option value="Ocean">Ocean-MP4</option>
+                        <option value="River">River-MP4</option>
                         <option value="Sky">Sky-MP4</option>
-                        <option value="Girl">Girl-MP4</option>
                     </select>
                 </div>
                 <div class="row justify-content-start botom_padding">
@@ -51,15 +50,9 @@
             <div class="col">
                 <video class="botom_padding" height="360" id="player" controls>Browser does not support VIDEO tag</video>
             </div>
-        </div>
-        <div class="row">
-            <div class="col">
+            <div class="col-4">
                 <h5 class="botom_padding">Console :</h5>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col">
-                <textarea class="border" cols="50" rows="10" id="console" readonly></textarea>
+                    <textarea class="border" cols="50" rows="10" id="console" readonly></textarea>
             </div>
         </div>
     </div>
@@ -86,7 +79,7 @@
             var mediaSource = new MediaSource;
 
             var video_id = document.getElementById('selector').value;
-            var quality = document.getElementById("quality").value;
+            var selected_quality = document.getElementById("quality").value;
 
             get_metadata(base, video_id)
                 .then(function (metadata) {
@@ -98,17 +91,16 @@
                     // todo - set metadata to use selected quality
                     // todo - Handle adaptive quality 
 
-                    log("Selected Quality :" + quality);
+                    log("Selected Quality :" + selected_quality);
 
                     log("Available quality :" + metadata["quality"])
 
-                    if(metadata["quality"].some(q=> q == quality)){
-                        alert("Quality found");
-                    }else{
-                        alert("Quality not found");
+                    if (selected_quality != "adaptive" && !metadata["quality"].some(q => q == selected_quality)) {
+                        alert("Quality not found. Video won't be played.");
+                        return;
                     }
 
-                    metadata["metadata"] = quality;
+                    metadata["quality"] = selected_quality;
 
                     log("Available segments :")
                     metadata["segments"].forEach(element => {
@@ -145,19 +137,21 @@
                         log("All segments loaded", 'Debug')
                         return;
                     }
+
+                    // Request Chunk
                     log("Requesting :" + metadata['segments'][index].segment)
-                    var chunk = await get_video_chunk(url_create(base, metadata["title"], metadata['segments'][index].segment));
+                    var chunk = await get_video_chunk(url_create(base, metadata["title"], metadata['segments'][index].segment, metadata['quality']));
                     log("Appended :" + metadata['segments'][index].segment)
-                    var time = metadata['segments'][index].end - metadata['segments'][index].start;
-                    //sourceBuffer.timestampOffset = sourceBuffer.timestampOffset + Math.round(time);
+                    
                     sourceBuffer.appendBuffer(chunk);
                 });
+                
+                // Request Chunk
                 log("Requesting :" + metadata['segments'][index].segment)
-                var chunk = await get_video_chunk(url_create(base, metadata["title"], metadata['segments'][index].segment));
+                var chunk = await get_video_chunk(url_create(base, metadata["title"], metadata['segments'][index].segment, metadata['quality']));
                 log("Appended :" + metadata['segments'][index].segment)
 
-                var time = metadata['segments'][index].end - metadata['segments'][index].start;
-                // sourceBuffer.timestampOffset = sourceBuffer.timestampOffset + Math.round(time);
+                
                 sourceBuffer.appendBuffer(chunk);
             } else {
                 alert("MIME type is not supported")

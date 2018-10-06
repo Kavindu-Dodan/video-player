@@ -90,6 +90,7 @@
                     log("Length : " + metadata['length']);
                     log("Selected Quality : " + selected_quality);
                     log("Available quality : " + metadata["quality"])
+                    log("Total duration : " + metadata["length"])
 
                     // todo - Handle adaptive quality 
                     if (selected_quality != "adaptive" && !metadata["quality"].some(q => q == selected_quality)) {
@@ -122,21 +123,19 @@
             }
 
             mediaSource.addEventListener('sourceopen', async function () {
-                var sourceBuffer = mediaSource.addSourceBuffer(metadata['mime']);
+                // Set duration
+                mediaSource.duration = metadata["length"];
 
-                //////////////
-                //sourceBuffer.mode = 'segments';
+                var sourceBuffer = mediaSource.addSourceBuffer(metadata['mime']);
 
                 var segmentCount = metadata['segments'].length
                 var index = 0;
 
                 sourceBuffer.addEventListener('update', async function () {
-
                     // Set time offset once loading is done
                     sourceBuffer.timestampOffset = metadata['segments'][index].end;
-                    log("\tTimestamp after:" + sourceBuffer.timestampOffset)
-                    
-                    // Loading and time setting is done move to next frame
+
+                    // Loading and time setting is done. Move to next frame
                     index++;
 
                     if (index >= metadata['segments'].length) {
@@ -148,7 +147,7 @@
                     next_quality = await loadChunk(metadata, index, sourceBuffer, next_quality);
                 });
 
-                // First segment is always in requested quality or in high 
+                // First segment is always fetched in requested quality or in high 
                 if (metadata["quality"] == "adaptive") {
                     next_quality = await loadChunk(metadata, index, sourceBuffer, "high");
                 } else {
@@ -158,10 +157,9 @@
             });
         }
 
-        // Will calculate the bandwith if quality "adaptive" is chosen. Return the next quality to request by calling function
+        // calculate the bandwidth if quality "adaptive" is chosen. Return the next quality to request by calling function
         async function loadChunk(metadata, segment_index, sourceBuffer, quality) {
             // Request & load Chunk
-
             var start = performance.now()
 
             log("Requesting : " + metadata['segments'][segment_index].segment)
